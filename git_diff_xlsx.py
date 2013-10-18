@@ -52,7 +52,7 @@ def parse(file,outfile):
 def main():
     args = sys.argv[1:]
     if len(args) != 1:
-        print 'usage: python test.py infile.xml'
+        print 'usage: python git_diff_xlsx.py infile.xlsx'
         sys.exit(-1)
     outfile = sys.stdout
     parse(args[0],outfile)
