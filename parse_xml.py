@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 from lxml import etree
 from lxml import objectify
+import zipfile
+import re
 
-from excelutil import *
+from excelutil import col2num, num2col, address2index, index2addres
 import tokenizer
 
 class Cell(object):
@@ -43,7 +45,7 @@ class Cell(object):
 
     def pretty_print(self):
         if self.cell_type == "string":
-            print "{:>3} \t {:<10}  \t {}".format(self.address,"", int(self.value))
+            print "{:>3} \t {:<10}  \t {}".format(self.address,"", (self.value))
         elif self.cell_type == "value":
             print "{:>3} \t {:<10}\t {}".format(self.address,"", round(float(self.value),2))
         else:
@@ -57,33 +59,9 @@ class Cell(object):
         elif self.cell_type == "shared":
             print "Cell {:>3} is a {} \t {:<10} \t {} \t host:{} \t si:{}".format(self.address, self.cell_type, self.formula, round(float(self.value),2), self.formula_host, self.shared_index)
         elif self.cell_type == "string":
-            print "Cell {:>3} is a {} \t {:<10} \t {} \t host:{} \t si:{}".format(self.address, self.cell_type, self.formula, round(float(self.value),2), self.formula_host, self.shared_index)
+            print "Cell {:>3} is a {} \t {:<10} \t {} \t host:{} \t si:{}".format(self.address, self.cell_type, self.formula, self.value, self.formula_host, self.shared_index)
         elif self.cell_type == "value":
             print "Cell {:>3} is a {} \t {:<10} \t {} \t host:{} \t si:{}".format(self.address, self.cell_type, self.formula, round(float(self.value),2), self.formula_host, self.shared_index)
-
-class Row(object):
-
-    def __init__(self,row_num,span):
-        self.row_num = row_num
-        self.span = span
-        self.cells = []
-
-    def add_cell(self, address):
-        self.cells.append(Cell(address))
-
-    def pretty_print(self):
-        for row in self.row_num:
-            print "Row: {}".format(row)
-        for cell in self.cells:
-            cell.pretty_print()
-#
-#    def __iter__(self):
-#        return self
-#    def next(self):
-#        if self.index == 0:
-#            raise StopIteration
-#        self.index = self.index - 1
-#        return self.data[self.index]
 
 def split_address(address):
 
@@ -117,143 +95,156 @@ def compute_offset(host_address, client_address):
 
     return tuple((column_offset,row_offset))
 
+def get_worksheets(name):
+   arc= zipfile.ZipFile( name, "r" )
+   member= arc.getinfo("xl/sharedStrings.xml")
+   arc.extract( member )
+   for member in arc.infolist():
+       if member.filename.startswith("xl/worksheets") and member.filename.endswith('.xml'):
+           arc.extract(member)
+           yield member.filename
 
-file = "xl/worksheets/sheet1.xml"
-parser = etree.XMLParser(ns_clean=True)
-tree = objectify.parse(file, parser)
-root = tree.getroot()
-ns = root.nsmap
+filename = "test.xlsx"
 
-output = []
+sheets = list(get_worksheets(filename))
 
-shared_formulas = []
+sharedstrings_file = "xl/sharedStrings.xml"
 
-rows = list(root)[3]
-for row in rows:
+sheetname = "xl/worksheets/sheet1.xml"
 
-    row_num = row.attrib.get("r")
-    span = row.attrib.get("span")
-    #output.append(Row(row_num, span))
-    #print "\nRow: {}".format(row_num)
+def get_shared_strings(shared_strings_file):
 
-    cells = list(row)
+    shared_string_dict = []
+    parser = etree.XMLParser(ns_clean=True)
+    stree = objectify.parse(shared_strings_file, parser)
+    sroot = stree.getroot()
+    srows = list(sroot)
+    for index, srow in enumerate(srows):
+        shared_string_dict.append(dict(index=index,string=srow[0].text))
+    return shared_string_dict
 
-    for cell in cells:
+string_dict = get_shared_strings(sharedstrings_file)
 
-        cell_address = ""
-        cell_type = ""
-        cell_value = ""
-        cell_shared_host = False
-        cell_formula = ""
-        cell_formula_type = ""
-        cell_formula_range = ""
-        cell_shared_index = None
+def parse_worksheet(sheetname, string_dict):
 
-        tags = []
+    parser = etree.XMLParser(ns_clean=True)
+    tree = objectify.parse(sheetname, parser)
+    root = tree.getroot()
 
-        items = list(cell)
+    # A list of cells
+    output = []
 
-        cell_address = cell.attrib.get("r")
+    # A list of shared formulas
+    shared_formulas = []
 
-        # Add a cell to the list of cells
-        output.append(Cell(cell_address))
+    rows = list(root)[3]
+    for row in rows: # Iterate over the rows
 
-        # Get a tempory list of the tags
-        for item in items:
-            tags.append(item.tag[-1])
+        cells = list(row)
 
-        if cell.attrib.get("t") == "s":
-            cell_type = "string"
-            output[-1].set_cell_type(cell_type)
+        for cell in cells: # Iterate over the cells in a row
+
+            cell_address = ""
+            cell_type = ""
+            cell_value = ""
+            cell_shared_host = False
+            cell_formula = ""
+            cell_shared_index = None
+
+            tags = []
+
+            items = list(cell)
+
+            cell_address = cell.attrib.get("r")
+
+            # Add a cell to the list of cells
+            output.append(Cell(cell_address))
+
+            # Get a tempory list of the tags
             for item in items:
-                if item.tag[-1] == "v":
-                    cell_value = item.text # lookup to string table via cell.text
-                    output[-1].set_cell_value(cell_value)
-        elif (not "f" in tags): # look to see if there is a formula - if not, it is a value
-            cell_type = "value"
-            output[-1].set_cell_type(cell_type)
-            cell_value = item.text
-            output[-1].set_cell_value(cell_value)
-        else:
-            for item in items:
-                #print "Cell {}:".format(cell_address)
-                #print "Attributes {}".format(item.attrib)
-                if item.tag[-1] == "f":
-                    if item.attrib.get("t") == "array":
-                        cell_type = "array"
-                        output[-1].set_cell_type(cell_type)
-                        cell_formula = item.text
-                        output[-1].set_formula(cell_formula)
-                        #print "Array formula"
-                    elif item.attrib.get("t") == "shared":
-                        cell_type = "shared"
-                        output[-1].set_cell_type(cell_type)
-                        #print "Shared formula: {} {}".format(item.attrib,item.text)
-                        if item.attrib.get("ref"):
-                            #print "Host cell of si {}".format(item.attrib.get("si"))
-                            cell_shared_host = True
-                            output[-1].set_formula_host(cell_shared_host)
-                            cell_shared_index = int(item.attrib.get("si"))
-                            output[-1].set_shared_index(cell_shared_index)
+                tags.append(item.tag[-1])
+
+            if cell.attrib.get("t") == "s":
+                cell_type = "string"
+                output[-1].set_cell_type(cell_type)
+                for item in items:
+                    if item.tag[-1] == "v":
+                        cell_value = item.text # lookup to string table via cell.text
+                        output[-1].set_cell_value(cell_value)
+            elif (not "f" in tags): # look to see if there is a formula - if not, it is a value
+                cell_type = "value"
+                output[-1].set_cell_type(cell_type)
+                cell_value = item.text
+                output[-1].set_cell_value(cell_value)
+            else:
+                for item in items: # Iterate over the attributes of the cell
+                    if item.tag[-1] == "f":
+                        if item.attrib.get("t") == "array":
+                            cell_type = "array"
+                            output[-1].set_cell_type(cell_type)
                             cell_formula = item.text
                             output[-1].set_formula(cell_formula)
-                            shared_formulas.append(dict(si=int(cell_shared_index),formula=cell_formula,address=cell_address))
+                        elif item.attrib.get("t") == "shared":
+                            cell_type = "shared"
+                            output[-1].set_cell_type(cell_type)
+                            if item.attrib.get("ref"):
+                                cell_shared_host = True
+                                output[-1].set_formula_host(cell_shared_host)
+                                cell_shared_index = int(item.attrib.get("si"))
+                                output[-1].set_shared_index(cell_shared_index)
+                                cell_formula = item.text
+                                output[-1].set_formula(cell_formula)
+                                shared_formulas.append(dict(si=int(cell_shared_index),formula=cell_formula,address=cell_address))
+                            else:
+                                cell_shared_index = int(item.attrib.get("si"))
+                                output[-1].set_shared_index(cell_shared_index)
+                                cell_formula = "si {}".format(cell_shared_index)
+                                output[-1].set_formula(cell_formula)
                         else:
-                            cell_shared_index = int(item.attrib.get("si"))
-                            output[-1].set_shared_index(cell_shared_index)
-                            cell_formula = "si {}".format(cell_shared_index)
+                            cell_type = "formula"
+                            output[-1].set_cell_type(cell_type)
+                            cell_formula = item.text
                             output[-1].set_formula(cell_formula)
+
+                    elif item.tag[-1] == "v":
+                        cell_value = item.text
+                        output[-1].set_cell_value(cell_value)
+
+    for cell in output:
+        new_formula = []
+        if (cell.cell_type == "shared") & (cell.formula_host == False):
+            # Cell is a shared formula
+            cell.shared_index
+            expression = next((formula["formula"] for formula in shared_formulas if formula["si"] == cell.shared_index),None)
+            host_address = next((formula["address"] for formula in shared_formulas if formula["si"] == cell.shared_index),None)
+            client_address = cell.address
+
+            p = tokenizer.ExcelParser()
+            p.parse(expression)
+
+            offset = compute_offset(host_address, client_address)
+
+            for t in p.tokens.items:
+                if t.ttype == "operand" and t.tsubtype == "range":
+                    if check_address(t.tvalue) == False:
+                        formula_range = address2index(t.tvalue)
+                        col,row = map(sum,zip(formula_range,offset))
+                        new_formula.append(index2addres(col,row))
                     else:
-                        cell_type = "formula"
-                        output[-1].set_cell_type(cell_type)
-                        cell_formula = item.text
-                        output[-1].set_formula(cell_formula)
-
-                    #print "Item {}: and type {} \t {}".format(item.tag[-1] , "formula" , item.text)
-                elif item.tag[-1] == "v":
-                    cell_value = item.text
-                    output[-1].set_cell_value(cell_value)
-                    #print "Item {}: and type {} \t {}".format(item.tag[-1] , "value" , item.text)
-        #print "Cell {:>3} is a {} \t {:<10} \t {} \t host:{} \t si:{}".format(cell_address, cell_type, cell_formula, round(float(cell_value),2), cell_shared_host, cell_shared_index)
-#print ""
-#for cell in output:
-#    cell.pretty_print()
-#next((item for item in dicts if item["name"] == "Pam"), None)
-
-for cell in output:
-    new_formula = []
-    if (cell.cell_type == "shared") & (cell.formula_host == False):
-        # Cell is a shared formula
-        cell.shared_index
-        expression = next((formula["formula"] for formula in shared_formulas if formula["si"] == cell.shared_index),None)
-        host_address = next((formula["address"] for formula in shared_formulas if formula["si"] == cell.shared_index),None)
-        client_address = cell.address
-
-        p = tokenizer.ExcelParser()
-        p.parse(expression)
-
-        offset = compute_offset(host_address, client_address)
-
-        for t in p.tokens.items:
-            if t.ttype == "operand" and t.tsubtype == "range":
-                if check_address(t.tvalue) == False:
-                    formula_range = address2index(t.tvalue)
-                    col,row = map(sum,zip(formula_range,offset))
-                    new_formula.append(index2addres(col,row))
+                        col, row = split_address(t.tvalue)
+                        if check_address(col) == False:
+                            # Column is not absolute address
+                            colnum = col2num(col)
+                            col = num2col(colnum + offset[0])
+                        if check_address(row) == False:
+                            # Row is not absolute address
+                            row = row + offset[1]
+                        new_formula.append("".join([col,row]))
                 else:
-                    col, row = split_address(t.tvalue)
-                    if check_address(col) == False:
-                        # Column is not absolute address
-                        colnum = col2num(col)
-                        col = num2col(colnum + offset[0])
-                    if check_address(row) == False:
-                        # Row is not absolute address
-                        row = row + offset[1]
-                    new_formula.append("".join([col,row]))
-            else:
-                new_formula.append(t.tvalue)
-        cell.set_formula(''.join(new_formula))
-
-for cell in output:
-    #cell.debug_print()
-    cell.pretty_print()
+                    new_formula.append(t.tvalue)
+            cell.set_formula(''.join(new_formula))
+        elif (cell.cell_type == "string"):
+            cell.set_value( next((string["string"] for string in string_dict if string["index"] == int(cell.value)),None))
+    for cell in output:
+        cell.debug_print()
+        #cell.pretty_print()
