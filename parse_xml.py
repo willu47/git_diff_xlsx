@@ -6,7 +6,7 @@ import re
 import sys
 
 from excelutil import col2num, num2col, address2index, index2addres
-import tokenizer
+from tokenizer import ExcelParser
 
 class Cell(object):
 
@@ -19,6 +19,8 @@ class Cell(object):
         self.formula_host=False
         self.formula_range=None
         self.shared_index=None
+
+
 
     def set_cell_type(self, cell_type):
         self.cell_type = cell_type
@@ -46,23 +48,26 @@ class Cell(object):
 
     def pretty_print(self):
         if self.cell_type == "string":
-            print u'{:>3} \t {:<10}  \t {}'.format(self.address,u'', self.value)
+            print '%(address)06s %(value)-20s' % \
+                {"address" : self.address, "value" : self.value }
         elif self.cell_type == "value":
-            print u'{:>3} \t {:<10}\t {}'.format(self.address,u'', self.value)
+            print '%(address)06s %(value) 60.2f' % \
+                {"address" : self.address, "value" : float(self.value) }
         else:
-            print u'{:>3} \t ={:<10} \t {}'.format(self.address, self.formula, self.value)
+            print '%(address)06s =%(formula)-20s %(value) 38.2f' % \
+                {"address" : self.address, "value" : float(self.value), "formula" : self.formula }
 
     def debug_print(self):
         if self.cell_type == "formula":
-            print u"Cell {:>3} is a {} \t {:<10} \t {} \t host:{} \t si:{}".format(self.address, self.cell_type, self.formula, self.value, self.formula_host, self.shared_index)
+            print "Cell {:>3} is a {} \t {:<10} \t {} \t host:{} \t si:{}".format(self.address, self.cell_type, self.formula, self.value, self.formula_host, self.shared_index)
         elif self.cell_type == "array":
-            print u"Cell {:>3} is a {} \t {:<10} \t {} \t host:{} \t si:{}".format(self.address, self.cell_type, self.formula, self.value, self.formula_host, self.shared_index)
+            print "Cell {:>3} is a {} \t {:<10} \t {} \t host:{} \t si:{}".format(self.address, self.cell_type, self.formula, self.value, self.formula_host, self.shared_index)
         elif self.cell_type == "shared":
-            print u"Cell {:>3} is a {} \t {:<10} \t {} \t host:{} \t si:{}".format(self.address, self.cell_type, self.formula, self.value, self.formula_host, self.shared_index)
+            print "Cell {:>3} is a {} \t {:<10} \t {} \t host:{} \t si:{}".format(self.address, self.cell_type, self.formula, self.value, self.formula_host, self.shared_index)
         elif self.cell_type == "string":
-            print u"Cell {:>3} is a {} \t {:<10} \t {} \t host:{} \t si:{}".format(self.address, self.cell_type, self.formula, self.value, self.formula_host, self.shared_index)
+            print "Cell {:>3} is a {} \t {:<10} \t {} \t host:{} \t si:{}".format(self.address, self.cell_type, self.formula, self.value, self.formula_host, self.shared_index)
         elif self.cell_type == "value":
-            print u"Cell {:>3} is a {} \t {:<10} \t {} \t host:{} \t si:{}".format(self.address, self.cell_type, self.formula, round(float(self.value),2), self.formula_host, self.shared_index)
+            print "Cell {:>3} is a {} \t {:<10} \t {} \t host:{} \t si:{}".format(self.address, self.cell_type, self.formula, round(float(self.value),2), self.formula_host, self.shared_index)
 
 def split_address(address):
 
@@ -165,13 +170,13 @@ def parse_worksheet(sheetname, string_dict):
                 output[-1].set_cell_type(cell_type)
                 for item in items:
                     if item.tag[-1] == "v":
-                        cell_value = item.text # lookup to string table via cell.text
+                        cell_value = str(item.text) # lookup to string table via cell.text
                         output[-1].set_cell_value(cell_value)
             elif (not "f" in tags): # look to see if there is a formula - if not, it is a value
                 cell_type = "value"
                 output[-1].set_cell_type(cell_type)
                 for item in items:
-                    cell_value = item.text
+                    cell_value = float(item.text)
                     output[-1].set_cell_value(cell_value)
             else: # otherwise it is an array/shared/formula cell
                 for item in items: # Iterate over the attributes of the cell
@@ -229,7 +234,7 @@ def update_shared_formulas(cell, shared_formulas):
     host_address = next((formula["address"] for formula in shared_formulas if formula["si"] == cell.shared_index),None)
     client_address = cell.address
 
-    p = tokenizer.ExcelParser()
+    p = ExcelParser()
     p.parse(expression)
 
     offset = compute_offset(host_address, client_address)
@@ -289,16 +294,16 @@ def main():
         print_cells(output)
 
 if __name__ == '__main__':
-    #main()
-    pass
+    main()
+    #pass
 
-filename = "ipcc.xlsx"
-sheets = list(get_worksheets(filename))
-string_dict = get_shared_strings("xl/sharedStrings.xml")
-
-sheet = sheets[6]
-#for sheet in sheets:
-print sheet
-output, shared_formulas = parse_worksheet(sheet,string_dict)
-post_process(output, shared_formulas, string_dict)
-print_cells(output)
+#filename = "ipcc.xlsx"
+#sheets = list(get_worksheets(filename))
+#string_dict = get_shared_strings("xl/sharedStrings.xml")
+#
+#sheet = sheets[6]
+##for sheet in sheets:
+#print sheet
+#output, shared_formulas = parse_worksheet(sheet,string_dict)
+#post_process(output, shared_formulas, string_dict)
+#print_cells(output)
