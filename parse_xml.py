@@ -33,22 +33,31 @@ class Cell(object):
             self.set_cell_type(cell_type)
             for item in items:
                 if item.tag[-1] == "v":
-                    cell_value = str(item.text) # lookup to string table via cell.text
+                    cell_value = (item.text) # lookup to string table via cell.text
                     self.set_cell_value(cell_value)
+
         elif (not "f" in tags): # look to see if there is a formula - if not, it is a value
             cell_type = "value"
             self.set_cell_type(cell_type)
             for item in items:
-                cell_value = float(item.text)
-                self.set_cell_value(cell_value)
+                if item.text != None:
+                    cell_value = float(item.text)
+                    self.set_cell_value(cell_value)
+                else:
+                    self.set_cell_value("<Empty cell>")
+
         else: # otherwise it is an array/shared/formula cell
+
             for item in items: # Iterate over the attributes of the cell
+
                 if item.tag[-1] == "f":
+
                     if item.attrib.get("t") == "array":
                         cell_type = "array"
                         self.set_cell_type(cell_type)
                         cell_formula = item.text
                         self.set_formula(cell_formula)
+
                     elif item.attrib.get("t") == "shared":
                         cell_type = "shared"
                         self.set_cell_type(cell_type)
@@ -59,6 +68,7 @@ class Cell(object):
                             self.set_shared_index(cell_shared_index)
                             cell_formula = item.text
                             self.set_formula(cell_formula)
+
                             global shared_formulas
                             shared_formulas.append(dict(si=int(cell_shared_index),formula=cell_formula,address=self.address))
                         else:
@@ -71,9 +81,15 @@ class Cell(object):
                         self.set_cell_type(cell_type)
                         cell_formula = item.text
                         self.set_formula(cell_formula)
+
                 elif item.tag[-1] == "v":
+                    # The value of a formula can be either a float or string
                     cell_value = item.text
                     self.set_cell_value(cell_value)
+
+                else:
+                    raise ValueError("Not sure what cell type this is")
+
 
     def set_cell_type(self, cell_type):
         self.cell_type = cell_type
@@ -101,14 +117,29 @@ class Cell(object):
 
     def pretty_print(self):
         if self.cell_type == "string":
-            print '%(address)06s %(value)-20s' % \
-                {"address" : self.address, "value" : self.value }
+            #if type(self.value) == 'unicode':
+            #    print self.address
+            #    raise TypeError("Unicode string")
+            # Strings are always strings
+            print '%(type)02s %(address)06s %(value)-20s' % \
+                {"address" : self.address, "value" : self.value, \
+                "type" : self.cell_type[:2] }
         elif self.cell_type == "value":
-            print '%(address)06s %(value) 60.2f' % \
-                {"address" : self.address, "value" : float(self.value) }
+            # Values are always floats
+            if self.value != None:
+                print '%(type)02s %(address)06s %(value) 60.2f' % \
+                    {"address" : self.address, "value" : float(self.value), \
+                    "type" : self.cell_type[:2] }
         else:
-            print '%(address)06s =%(formula)-20s %(value) 38.2f' % \
-                {"address" : self.address, "value" : float(self.value), "formula" : self.formula }
+            # Formula values can be either floats or strings
+            try:
+                print '%(type)02s %(address)06s =%(formula)-20s %(value) 38.2f' % \
+                    {"address" : self.address, "value" : float(self.value), \
+                    "formula" : self.formula, "type" : self.cell_type[:2] }
+            except ValueError:
+                print '%(type)02s %(address)06s =%(formula)-20s %(value) 38.2s' % \
+                    {"address" : self.address, "value" : self.value, \
+                    "formula" : self.formula, "type" : self.cell_type[:2] }
 
     def debug_print(self):
         if self.cell_type == "formula":
@@ -171,7 +202,10 @@ def get_shared_strings(shared_strings_file):
     sroot = stree.getroot()
     srows = list(sroot)
     for index, srow in enumerate(srows):
-        shared_string_dict.append(srow[0].text)
+        if srow[0].text == None:
+            shared_string_dict.append("")
+        else:
+            shared_string_dict.append(srow[0].text.encode('utf-8'))
     return shared_string_dict
 
 def get_row(row_name, tree_root):
@@ -272,6 +306,19 @@ def print_cells(output):
         #cell.debug_print()
         cell.pretty_print()
 
+def test():
+    filename = "ipcc.xlsx"
+    sheets = list(get_worksheets(filename))
+    string_dict = get_shared_strings("xl/sharedStrings.xml")
+
+    sheet = sheets[8]
+    #for sheet in sheets:
+    print sheet
+    output, shared_formulas = parse_worksheet(sheet,string_dict)
+    post_process(output, shared_formulas, string_dict)
+    print_cells(output)
+
+
 def main():
     args = sys.argv[1:]
     if len(args) != 1:
@@ -288,15 +335,4 @@ def main():
 
 if __name__ == '__main__':
     main()
-    #pass
-
-#filename = "ipcc.xlsx"
-#sheets = list(get_worksheets(filename))
-#string_dict = get_shared_strings("xl/sharedStrings.xml")
-#
-#sheet = sheets[6]
-##for sheet in sheets:
-#print sheet
-#output, shared_formulas = parse_worksheet(sheet,string_dict)
-#post_process(output, shared_formulas, string_dict)
-#print_cells(output)
+    #test()
