@@ -3,6 +3,7 @@ from lxml import etree
 from lxml import objectify
 import zipfile
 import re
+import sys
 
 from excelutil import col2num, num2col, address2index, index2addres
 import tokenizer
@@ -112,8 +113,11 @@ def get_shared_strings(shared_strings_file):
     sroot = stree.getroot()
     srows = list(sroot)
     for index, srow in enumerate(srows):
-        shared_string_dict.append(dict(index=index,string=srow[0].text))
+        shared_string_dict.append(srow[0].text)
     return shared_string_dict
+
+def get_row(row_name, tree_root):
+    return next((row for row in list(tree_root) if row.tag == "{" + tree_root.nsmap.get(None) + "}"+ row_name), None)
 
 def parse_worksheet(sheetname, string_dict):
 
@@ -126,9 +130,7 @@ def parse_worksheet(sheetname, string_dict):
 
     # A list of shared formulas
     shared_formulas = []
-    rows = next((row for row in list(root) if row.tag == "{" + root.nsmap.get(None) + "}sheetData"),None)
-    #rows = next((formula["formula"] for formula in shared_formulas if formula["si"] == cell.shared_index),None)
-    #rows = list(root)[3]
+    rows = get_row("sheetData", root)
     for row in rows: # Iterate over the rows
 
         cells = list(row)
@@ -235,16 +237,22 @@ def parse_worksheet(sheetname, string_dict):
                     new_formula.append(t.tvalue)
             cell.set_formula(''.join(new_formula))
         elif (cell.cell_type == "string"):
-            cell.set_value( next((string["string"] for string in string_dict if string["index"] == int(cell.value)),None))
+            cell.set_value( string_dict[int(cell.value)])
     for cell in output:
         #cell.debug_print()
         cell.pretty_print()
 
-filename = "test.xlsx"
+def main():
+    args = sys.argv[1:]
+    if len(args) != 1:
+        print 'usage: python git_diff_xlsx.py infile.xlsx'
+        sys.exit(-1)
+    #outfile = sys.stdout
+    sheets = list(get_worksheets(args[0]))
+    string_dict = get_shared_strings("xl/sharedStrings.xml")
+    for sheet in sheets:
+        print sheet
+        parse_worksheet(sheet,string_dict)
 
-sheets = list(get_worksheets(filename))
-string_dict = get_shared_strings("xl/sharedStrings.xml")
-
-for sheet in sheets:
-    print sheet
-    parse_worksheet(sheet,string_dict)
+if __name__ == '__main__':
+    main()
