@@ -46,23 +46,23 @@ class Cell(object):
 
     def pretty_print(self):
         if self.cell_type == "string":
-            print "{:>3} \t {:<10}  \t {}".format(self.address,"", (self.value))
+            print u'{:>3} \t {:<10}  \t {}'.format(self.address,u'', self.value)
         elif self.cell_type == "value":
-            print "{:>3} \t {:<10}\t {}".format(self.address,"", round(float(self.value),2))
+            print u'{:>3} \t {:<10}\t {}'.format(self.address,u'', self.value)
         else:
-            print "{:>3} \t ={:<10} \t {}".format(self.address, self.formula, round(float(self.value),2))
+            print u'{:>3} \t ={:<10} \t {}'.format(self.address, self.formula, self.value)
 
     def debug_print(self):
         if self.cell_type == "formula":
-            print "Cell {:>3} is a {} \t {:<10} \t {} \t host:{} \t si:{}".format(self.address, self.cell_type, self.formula, round(float(self.value),2), self.formula_host, self.shared_index)
+            print u"Cell {:>3} is a {} \t {:<10} \t {} \t host:{} \t si:{}".format(self.address, self.cell_type, self.formula, self.value, self.formula_host, self.shared_index)
         elif self.cell_type == "array":
-            print "Cell {:>3} is a {} \t {:<10} \t {} \t host:{} \t si:{}".format(self.address, self.cell_type, self.formula, round(float(self.value),2), self.formula_host, self.shared_index)
+            print u"Cell {:>3} is a {} \t {:<10} \t {} \t host:{} \t si:{}".format(self.address, self.cell_type, self.formula, self.value, self.formula_host, self.shared_index)
         elif self.cell_type == "shared":
-            print "Cell {:>3} is a {} \t {:<10} \t {} \t host:{} \t si:{}".format(self.address, self.cell_type, self.formula, round(float(self.value),2), self.formula_host, self.shared_index)
+            print u"Cell {:>3} is a {} \t {:<10} \t {} \t host:{} \t si:{}".format(self.address, self.cell_type, self.formula, self.value, self.formula_host, self.shared_index)
         elif self.cell_type == "string":
-            print "Cell {:>3} is a {} \t {:<10} \t {} \t host:{} \t si:{}".format(self.address, self.cell_type, self.formula, self.value, self.formula_host, self.shared_index)
+            print u"Cell {:>3} is a {} \t {:<10} \t {} \t host:{} \t si:{}".format(self.address, self.cell_type, self.formula, self.value, self.formula_host, self.shared_index)
         elif self.cell_type == "value":
-            print "Cell {:>3} is a {} \t {:<10} \t {} \t host:{} \t si:{}".format(self.address, self.cell_type, self.formula, round(float(self.value),2), self.formula_host, self.shared_index)
+            print u"Cell {:>3} is a {} \t {:<10} \t {} \t host:{} \t si:{}".format(self.address, self.cell_type, self.formula, round(float(self.value),2), self.formula_host, self.shared_index)
 
 def split_address(address):
 
@@ -77,8 +77,8 @@ def split_address(address):
 
     return (col,row)
 
-def check_address(address):
-    if (address.find("$") != -1):
+def check_address(address,symbol):
+    if (address.find(symbol) != -1):
         # address has an absolute
         return True
     else:
@@ -120,7 +120,9 @@ def get_row(row_name, tree_root):
     return next((row for row in list(tree_root) if row.tag == "{" + tree_root.nsmap.get(None) + "}"+ row_name), None)
 
 def parse_worksheet(sheetname, string_dict):
-
+    '''
+    Returns a list of class Cells
+    '''
     parser = etree.XMLParser(ns_clean=True)
     tree = objectify.parse(sheetname, parser)
     root = tree.getroot()
@@ -130,6 +132,7 @@ def parse_worksheet(sheetname, string_dict):
 
     # A list of shared formulas
     shared_formulas = []
+
     rows = get_row("sheetData", root)
     for row in rows: # Iterate over the rows
 
@@ -157,7 +160,7 @@ def parse_worksheet(sheetname, string_dict):
             for item in items:
                 tags.append(item.tag[-1])
 
-            if cell.attrib.get("t") == "s":
+            if cell.attrib.get("t") == "s": # cell is of type string
                 cell_type = "string"
                 output[-1].set_cell_type(cell_type)
                 for item in items:
@@ -167,9 +170,10 @@ def parse_worksheet(sheetname, string_dict):
             elif (not "f" in tags): # look to see if there is a formula - if not, it is a value
                 cell_type = "value"
                 output[-1].set_cell_type(cell_type)
-                cell_value = item.text
-                output[-1].set_cell_value(cell_value)
-            else:
+                for item in items:
+                    cell_value = item.text
+                    output[-1].set_cell_value(cell_value)
+            else: # otherwise it is an array/shared/formula cell
                 for item in items: # Iterate over the attributes of the cell
                     if item.tag[-1] == "f":
                         if item.attrib.get("t") == "array":
@@ -198,46 +202,74 @@ def parse_worksheet(sheetname, string_dict):
                             output[-1].set_cell_type(cell_type)
                             cell_formula = item.text
                             output[-1].set_formula(cell_formula)
-
                     elif item.tag[-1] == "v":
                         cell_value = item.text
                         output[-1].set_cell_value(cell_value)
 
+    return output, shared_formulas
+
+def post_process(output, shared_formulas, string_dict):
+    '''
+
+    '''
     for cell in output:
-        new_formula = []
+        #print cell.address, cell.formula, cell.cell_type, cell.formula_host
         if (cell.cell_type == "shared") & (cell.formula_host == False):
-            # Cell is a shared formula
-            cell.shared_index
-            expression = next((formula["formula"] for formula in shared_formulas if formula["si"] == cell.shared_index),None)
-            host_address = next((formula["address"] for formula in shared_formulas if formula["si"] == cell.shared_index),None)
-            client_address = cell.address
-
-            p = tokenizer.ExcelParser()
-            p.parse(expression)
-
-            offset = compute_offset(host_address, client_address)
-
-            for t in p.tokens.items:
-                if t.ttype == "operand" and t.tsubtype == "range":
-                    if check_address(t.tvalue) == False:
-                        formula_range = address2index(t.tvalue)
-                        col,row = map(sum,zip(formula_range,offset))
-                        new_formula.append(index2addres(col,row))
-                    else:
-                        col, row = split_address(t.tvalue)
-                        if check_address(col) == False:
-                            # Column is not absolute address
-                            colnum = col2num(col)
-                            col = num2col(colnum + offset[0])
-                        if check_address(row) == False:
-                            # Row is not absolute address
-                            row = row + offset[1]
-                        new_formula.append("".join([col,row]))
-                else:
-                    new_formula.append(t.tvalue)
-            cell.set_formula(''.join(new_formula))
+            cell.set_formula(update_shared_formulas(cell, shared_formulas))
+            #except:
+                #print "ERROR", cell.address
         elif (cell.cell_type == "string"):
             cell.set_value( string_dict[int(cell.value)])
+
+def update_shared_formulas(cell, shared_formulas):
+
+    new_formula = []
+
+    expression = next((formula["formula"] for formula in shared_formulas if formula["si"] == cell.shared_index),None)
+    host_address = next((formula["address"] for formula in shared_formulas if formula["si"] == cell.shared_index),None)
+    client_address = cell.address
+
+    p = tokenizer.ExcelParser()
+    p.parse(expression)
+
+    offset = compute_offset(host_address, client_address)
+
+    for t in p.tokens.items: # Iterate over the tokens
+        if t.ttype == "operand" and t.tsubtype == "range":
+            if check_address(t.tvalue,":") == True: # If operand-range is a range
+                # split the range
+                new_range = []
+                for ad in t.tvalue.split(":"):
+                    updated_address = offset_cell(ad,offset)
+                    new_range.append(updated_address)
+                new_formula.append(":".join(new_range))
+            else: # If operand-range is just a cell
+                updated_address = offset_cell(t.tvalue,offset)
+                new_formula.append(updated_address)
+        else: # If not a range
+            new_formula.append(t.tvalue)
+
+    return ''.join(new_formula)
+
+def offset_cell(address,offset):
+    new_formula = []
+    if check_address(address,"$") == False:
+        formula_range = address2index(address)
+        col,row = map(sum,zip(formula_range,offset))
+        new_formula = index2addres(col,row)
+    else:
+        col, row = split_address(address)
+        if check_address(col,"$") == False:
+            # Column is not absolute address
+            colnum = col2num(col)
+            col = num2col(colnum + offset[0])
+        if check_address(row,"$") == False:
+            # Row is not absolute address
+            row = row + offset[1]
+        new_formula = "".join([col,row])
+    return new_formula
+
+def print_cells(output):
     for cell in output:
         #cell.debug_print()
         cell.pretty_print()
@@ -245,14 +277,28 @@ def parse_worksheet(sheetname, string_dict):
 def main():
     args = sys.argv[1:]
     if len(args) != 1:
-        print 'usage: python git_diff_xlsx.py infile.xlsx'
+        print 'usage: python parse_xml.py infile.xlsx'
         sys.exit(-1)
     #outfile = sys.stdout
     sheets = list(get_worksheets(args[0]))
     string_dict = get_shared_strings("xl/sharedStrings.xml")
     for sheet in sheets:
         print sheet
-        parse_worksheet(sheet,string_dict)
+        output, shared_formulas = parse_worksheet(sheet,string_dict)
+        post_process(output, shared_formulas, string_dict)
+        print_cells(output)
 
 if __name__ == '__main__':
-    main()
+    #main()
+    pass
+
+filename = "ipcc.xlsx"
+sheets = list(get_worksheets(filename))
+string_dict = get_shared_strings("xl/sharedStrings.xml")
+
+sheet = sheets[6]
+#for sheet in sheets:
+print sheet
+output, shared_formulas = parse_worksheet(sheet,string_dict)
+post_process(output, shared_formulas, string_dict)
+print_cells(output)
