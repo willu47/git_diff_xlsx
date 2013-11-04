@@ -194,18 +194,31 @@ def get_worksheets(name):
            arc.extract(member)
            yield member.filename
 
-def get_shared_strings(shared_strings_file):
+def process_shared_string_row(srow):
+    temp = []
+    if len(srow.xpath("t")) == 0:
+        if len(srow.xpath("r/t")) >= 0:
+            temp  = [element.text.encode('utf-8') for element in srow.xpath("r/t")]
+            return "".join(temp)
+        else:
+            return ""
+    else: # there are some t fields in row
+        temp = [element.text.encode('utf-8') for element in srow.xpath("t")]
+        return "".join(temp)
 
+def get_shared_strings(shared_strings_file):
+    '''
+    Obtains the shared strings from the specified xml file and returns them
+    in a list
+    '''
     shared_string_dict = []
     parser = etree.XMLParser(ns_clean=True)
     stree = objectify.parse(shared_strings_file, parser)
     sroot = stree.getroot()
     srows = list(sroot)
-    for index, srow in enumerate(srows):
-        if srow[0].text == None:
-            shared_string_dict.append("")
-        else:
-            shared_string_dict.append(srow[0].text.encode('utf-8'))
+    for srow in srows:
+        shared_string_dict.append(process_shared_string_row(srow))
+
     return shared_string_dict
 
 def get_row(row_name, tree_root):
