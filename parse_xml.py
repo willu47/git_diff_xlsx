@@ -186,8 +186,8 @@ def compute_offset(host_address, client_address):
     return tuple((column_offset,row_offset))
 
 def get_worksheets(name):
-   arc= zipfile.ZipFile( name, "r" )
-   member= arc.getinfo("xl/sharedStrings.xml")
+   arc = zipfile.ZipFile( name, "r" )
+   member = arc.getinfo("xl/sharedStrings.xml")
    arc.extract( member )
    for member in arc.infolist():
        if member.filename.startswith("xl/worksheets") and member.filename.endswith('.xml'):
@@ -195,16 +195,27 @@ def get_worksheets(name):
            yield member.filename
 
 def process_shared_string_row(srow):
+    '''
+    Takes an objectify element of the shared strings file and
+    returns a string of the text, ignoring all other gumph in the file.
+
+    Input should have tag '/si' and can contain one of three internal structures:
+        1. si -> r -> t, bla, bla (a string with formatting e.g. subscript)
+              -> r -> bla, t, bla
+
+        2. si -> t, bla (
+
+        3. si -> t
+    '''
     temp = []
-    if len(srow.xpath("t")) == 0:
-        if len(srow.xpath("r/t")) >= 0:
-            temp  = [element.text.encode('utf-8') for element in srow.xpath("r/t")]
-            return "".join(temp)
-        else:
-            return ""
-    else: # there are some t fields in row
-        temp = [element.text.encode('utf-8') for element in srow.xpath("t")]
-        return "".join(temp)
+    for element in list(srow):
+        if element.tag[-1] == "r": # Do option 1
+            for subelement in list(element):
+                if subelement.tag[-1] == "t":
+                    temp.append(subelement.text.encode('utf-8'))
+        elif element.tag[-1] == "t":
+            temp.append(element.text.encode('utf-8'))
+    return "".join(temp)
 
 def get_shared_strings(shared_strings_file):
     '''
@@ -218,7 +229,6 @@ def get_shared_strings(shared_strings_file):
     srows = list(sroot)
     for srow in srows:
         shared_string_dict.append(process_shared_string_row(srow))
-
     return shared_string_dict
 
 def get_row(row_name, tree_root):

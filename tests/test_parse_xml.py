@@ -47,7 +47,7 @@ class test_offset_cell(TestCase):
         new_formula = offset_cell(old_formula, offset)
         tools.assert_equal(old_formula,new_formula)
 
-class test_shared_strings(TestCase):
+class test_process_shared_string_row(TestCase):
 
     def setup(self, xml):
         parser = etree.XMLParser(ns_clean=True)
