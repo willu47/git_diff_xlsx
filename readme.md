@@ -13,3 +13,5 @@
     `*.xlsx diff=zip`
 4. Now, typing `git diff` at the prompt will produce text versions
 of Excel `.xlsx` files 
+
+See https://wiki.ucl.ac.uk/x/P7MpAg for more details.
