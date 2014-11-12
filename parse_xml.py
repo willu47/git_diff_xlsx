@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 parse_xml - converts an .xlsx file into plain text for use by git diff
 Copyright (C) 2013  Will Usher
 
@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see [http://www.gnu.org/licenses/].
 
 You can contact the author via e-mail: w.usher[ot]ucl.ac.uk
-'''
+"""
 
 from lxml import etree
 from lxml import objectify
