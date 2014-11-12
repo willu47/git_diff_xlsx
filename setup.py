@@ -16,7 +16,7 @@ class NoseTestCommand(TestCommand):
 
 setup(
 
-	name = "gitxl",
+	name = "git_diff_xlsx",
 	version = "0.1",
 	packages = find_packages(exclude=['*test']),
 	scripts = [],

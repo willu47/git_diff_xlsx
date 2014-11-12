@@ -1,10 +1,11 @@
 from nose.tools import assert_equal, raises
-from git_diff_xlsx import parse
+from ..git_diff_xlsx import parse
+import sys
 
-@raises(ValueError)
+
 def test_parse_xlsx():
-    infile = ""
-    outfile = ""
+    infile = "tests/test1.xlsx"
+    outfile = sys.stdout
     actual = parse(infile, outfile)
     desired = ""
     assert_equal(actual, desired)
