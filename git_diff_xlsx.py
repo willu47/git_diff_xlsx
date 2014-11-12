@@ -7,7 +7,7 @@
 #     [diff "zip"]
 #   	    binary = True
 #	    textconv = python c:/path/to/git_diff_xlsx.py
-# 3. Add the following line to the repository's .gitattributes	
+# 3. Add the following line to the repository's .gitattributes
 #    *.xlsx diff=zip
 # 4. Now, typing [git diff] at the prompt will produce text versions
 # of Excel .xlsx files
@@ -19,9 +19,9 @@
 import xlrd as xl
 import sys
 
-def parse(file,outfile):    
-    
-    book = xl.open_workbook(file)
+def parse(infile,outfile):
+
+    book = xl.open_workbook(infile)
 
     num_sheets = book.nsheets
 
@@ -29,10 +29,10 @@ def parse(file,outfile):
 
 #   print "File last edited by " + book.user_name + "\n"
     outfile.write("File last edited by " + book.user_name + "\n")
-    
+
     def get_cells(sheet, rowx, colx):
         return sheet.cell_value(rowx, colx)
-    
+
     # loop over worksheets
 
     for index in range(0,num_sheets):
@@ -40,14 +40,14 @@ def parse(file,outfile):
         sheet = book.sheet_by_index(index)
         outfile.write("=================================\n")
         outfile.write("Sheet: " + sheet.name + "[ " + str(sheet.nrows) + " , " + str(sheet.ncols) + " ]\n")
-        outfile.write("=================================\n") 
+        outfile.write("=================================\n")
         for row in range(0,sheet.nrows):
             for col in range(0,sheet.ncols):
                 content = get_cells(sheet, row, col)
                 if content <> "":
                     outfile.write("    " + str(xl.cellname(row,col)) + ": " + str(content) + "\n")
         print "\n"
-        
+
 # output cell address and contents of cell
 def main():
     args = sys.argv[1:]

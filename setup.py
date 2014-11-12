@@ -1,13 +1,28 @@
-# http://stackoverflow.com/questions/17806485/execute-a-python-script-post-install-using-distutils-setuptools
-
 from setuptools import setup, find_packages
+from setuptools.command.test import test as TestCommand
+
+
+class NoseTestCommand(TestCommand):
+
+    def finalize_options(self):
+        TestCommand.finalize_options(self)
+        self.test_args = []
+        self.test_suite = True
+
+    def run_tests(self):
+        # Run nose ensuring that argv simulates running nosetests directly
+        import nose
+        nose.run_exit(argv=['nosetests'])
+
 setup(
 
 	name = "gitxl",
 	version = "0.1",
 	packages = find_packages(exclude=['*test']),
 	scripts = [],
-	test_suite = "git_diff_xlsx.tests.test_all",
+	tests_require=['nose'],
+
+        cmdclass={'test': NoseTestCommand},
 
 	install_requires = ['xlrd'],
 
@@ -18,9 +33,5 @@ setup(
 	license = "",
 	keywords = "git excel",
 	url = "https://github.com/willu47/git_diff_xlsx",
-
-
-
-
 
 )
