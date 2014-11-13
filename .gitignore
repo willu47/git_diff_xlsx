@@ -4,3 +4,8 @@
 *.xml
 ~.*
 *.xlsx
+/build/*
+/dist/*
+*.egg-info
+tests/test1unicode/
+tests/test1/
