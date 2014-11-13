@@ -7,5 +7,11 @@ def test_parse_xlsx():
     infile = "tests/test1.xlsx"
     outfile = sys.stdout
     actual = parse(infile, outfile)
-    desired = ""
-    assert_equal(actual, desired)
+    desired = \
+    """
+    =================================
+    Sheet: 1 [1, 1]
+    =================================
+    A1: Hello World
+    """
+    assert_equal(outfile, desired)
