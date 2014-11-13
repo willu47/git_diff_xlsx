@@ -20,14 +20,14 @@ setup(
 	version = "0.1",
 	packages = find_packages(exclude=['*test']),
 	scripts = [],
-	tests_require=['nose'],
+	tests_require=['nose','pytest'],
 	dependency_links=
-	   ["https://raw.githubusercontent.com/willu47/pycel/master/src/pycel/tokenizer.py",
-	   "https://raw.githubusercontent.com/willu47/pycel/master/src/pycel/excelutil.py"],
+	   ["https://raw.githubusercontent.com/willu47/pycel/master/src/pycel/tokenizer.py#egg=tokenizer-v1.0",
+	   "https://raw.githubusercontent.com/willu47/pycel/master/src/pycel/excelutil.py#egg=excelutil-v1.0"],
 
         cmdclass={'test': NoseTestCommand},
 
-	install_requires = ['lxml'],
+	install_requires = ['lxml','tokenizer','excelutil'],
 
 	author = "Will Usher",
 	author_email = "w.usher@ucl.ac.uk",
