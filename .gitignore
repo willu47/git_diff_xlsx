@@ -1,4 +1,8 @@
 
 *.html
-
 *.pyc
+*.egg-info
+/build/*
+/dist/*
+/tests/test1unicode/*
+/tests/test1/*
