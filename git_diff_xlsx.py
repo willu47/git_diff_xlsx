@@ -20,6 +20,10 @@ import xlrd as xl
 import sys
 
 def parse(infile,outfile):
+    """
+    Converts an Excel file into text
+    Returns a formatted text file for comparison using git diff.
+    """
 
     book = xl.open_workbook(infile)
 
@@ -45,7 +49,7 @@ def parse(infile,outfile):
             for col in range(0,sheet.ncols):
                 content = get_cells(sheet, row, col)
                 if content <> "":
-                    outfile.write("    " + str(xl.cellname(row,col)) + ": " + str(content) + "\n")
+                    outfile.write("    " + unicode(xl.cellname(row,col)) + ": " + unicode(content) + "\n")
         print "\n"
 
 # output cell address and contents of cell
