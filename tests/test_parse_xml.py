@@ -1,5 +1,9 @@
 
-from parse_xml import Cell, print_cells, offset_cell, process_shared_string_row
+from parse_xml import Cell, print_cells, offset_cell, \
+                      process_shared_string_row, \
+                      get_worksheets, get_shared_strings, parse_worksheet, \
+                      post_process
+
 from lxml import objectify
 from lxml import etree
 from nose import tools
@@ -28,7 +32,7 @@ class test_print_cells(TestCase):
         xml = '''<c r="E7"><f ca="1">E6+$C$6</f><v>4.45</v></c>'''
         cell = self.setup(xml)
         string = print_cells(cell)
-        tools.assert_equal(string, "fo    E7  E6+$C$6    4.45")
+        tools.assert_equal(string, "fo    E7 = E6+$C$6    4.45")
 
     def test_print_formula_cell_text(self):
         '''
@@ -37,7 +41,7 @@ class test_print_cells(TestCase):
         xml = '''<c r="E7"><f ca="1">E6+$C$6</f><v>"This is a string"</v></c>'''
         cell = self.setup(xml)
         string = print_cells(cell)
-        tools.assert_equal(string, "fo    E7  E6+$C$6    This is a string")
+        tools.assert_equal(string, "fo    E7 = E6+$C$6    This is a string")
 
 class test_offset_cell(TestCase):
 
@@ -94,3 +98,19 @@ class test_process_shared_string_row(TestCase):
         row = self.setup(xml)
         output = process_shared_string_row(row)
         tools.assert_equal(output, "Non-metallic minerals (cem proxy)")
+
+
+class test_workbook(TestCase):
+
+    def test(self):
+        """
+        Opens the test workbook and checks the print out matches the content
+        """
+        filename = "tests/test1.xlsx"
+        sheets = list(get_worksheets(filename))
+        string_dict = get_shared_strings("xl/sharedStrings.xml")
+
+        sheet = sheets[0]
+        output, shared_formulas = parse_worksheet(sheet, string_dict)
+        post_process(output, shared_formulas, string_dict)
+        tools.assert_equal(print_cells(output), "st    A1    Hello World")

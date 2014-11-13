@@ -153,11 +153,11 @@ class Cell(object):
         else:
             # Formula values can be either floats or strings
             try:
-                print '%(type)02s %(address)06s =%(formula)-20s %(value) 38.2f' % \
+                print '%(type)02s %(address)06s = %(formula)-20s %(value) 38.2f' % \
                     {"address" : self.address, "value" : float(self.value), \
                     "formula" : self.formula, "type" : self.cell_type[:2] }
             except ValueError:
-                print '%(type)02s %(address)06s =%(formula)-20s %(value) 38.2s' % \
+                print '%(type)02s %(address)06s = %(formula)-20s %(value) 38.2s' % \
                     {"address" : self.address, "value" : self.value, \
                     "formula" : self.formula, "type" : self.cell_type[:2] }
 
@@ -350,7 +350,7 @@ def print_cells(output):
         cell.pretty_print()
 
 def test():
-    filename = "ipcc.xlsx"
+    filename = "tests\test1.xlsx"
     sheets = list(get_worksheets(filename))
     string_dict = get_shared_strings("xl/sharedStrings.xml")
 
