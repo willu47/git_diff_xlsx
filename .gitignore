@@ -3,7 +3,6 @@
 /xl
 *.xml
 ~.*
-*.xlsx
 /build/*
 /dist/*
 *.egg-info
