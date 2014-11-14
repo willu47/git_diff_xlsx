@@ -21,7 +21,7 @@ setup(
 	packages = find_packages(exclude=['*test']),
 	scripts = [],
 	tests_require=['nose','pytest'],
-	entry_points = {'console_scripts': 'parse_xml = parse_xml:main'},
+	entry_points = {'console_scripts': 'parse_xlsx = parse_xml:main'},
 	dependency_links=
 	   ["https://raw.githubusercontent.com/willu47/pycel/master/src/pycel/tokenizer.py#egg=tokenizer-v1.0",
 	   "https://raw.githubusercontent.com/willu47/pycel/master/src/pycel/excelutil.py#egg=excelutil-v1.0"],
