@@ -6,13 +6,13 @@
 2. Add the following line to the global .gitconfig file:
 
 ```
-    [diff "zip"]
+    [diff "git_diff_xlsx"]
     binary = True
-    textconv = python -m parse_xml
+    textconv = parse_xlsx
     cachetextconv = true
 ```
 
 3. Add the following line to the repository's .gitattributes
-    `*.xlsx diff=zip`
+    `*.xlsx diff=git_diff_xlsx`
 4. Now, typing `git diff` at the prompt will produce differences between
 text versions of Excel `.xlsx` files

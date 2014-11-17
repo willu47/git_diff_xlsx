@@ -384,7 +384,7 @@ def test():
 def main():
     args = sys.argv[1:]
     if len(args) != 1:
-        print 'usage: python parse_xml.py infile.xlsx'
+        print 'usage: parse_xlsx infile.xlsx'
         sys.exit(-1)
     #outfile = sys.stdout
     sheets = list(get_worksheets(args[0]))
@@ -397,4 +397,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    # test()
