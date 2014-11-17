@@ -19,6 +19,7 @@ setup(
     name="git_diff_xlsx",
     version="0.1",
     packages=find_packages(exclude=['*test']),
+    py_modules=['parse_xml'],
     scripts=[],
     tests_require=['nose', 'pytest'],
     entry_points='''
