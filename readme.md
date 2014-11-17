@@ -10,7 +10,7 @@ See my [blog entry](https://wiki.ucl.ac.uk/x/P7MpAg) for more details of how it 
 
 ## Installation
 
-1. Download the [latest release](https://github.com/willu47/git_diff_xlsx/releases)
+1. Download the [latest release](https://github.com/willu47/git_diff_xlsx/releases/latest)
 1. Run `python setup.py install`
 2. Add the following lines to the global .gitconfig file:
 
