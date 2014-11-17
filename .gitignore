@@ -1,8 +1,13 @@
-
-*.html
 *.pyc
-*.egg-info
+*.html
 /build/*
 /dist/*
 /tests/test1unicode/*
 /tests/test1/*
+/xl
+*.xml
+~.*
+/build/*
+/dist/*
+*.egg-info*
+*.egg

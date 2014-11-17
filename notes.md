@@ -1,20 +1,20 @@
 New rows are specified by
 
     <row>
-	<\row>
+    <\row>
 
 Within the row header, attributes `r` and `spans` specify the row number and number of
 columns in the row respectively.
 
 	<row r="6" spans="1:9">
 	</row>
-	
+
 Populated cells result in a `<c><\c>` header which also contains various attributes.
 These attributes depend upon the content of the cell - which defines the cell type.
 
 Cell types `t=""` include
 
-* `s` : string 
+* `s` : string
 * `<blank>`  : normal formula or a value only
 * `array` : array formula
 * `shared` : shared formula
@@ -34,7 +34,7 @@ The value of the cell is stored in the `<v><\v>` header.
 
 ## Strings
 
-String are stored in a separate XML file called `sharedStrings.xml` 
+String are stored in a separate XML file called `sharedStrings.xml`
 and referred to by an index which is stored in the `<v><\v>` header.
 
 	<row r="1" spans="1:9">
@@ -42,7 +42,7 @@ and referred to by an index which is stored in the `<v><\v>` header.
 			<v>0</v>
 		</c>
 	</row>
-	
+
 The `t="s"` flag indicates that a lookup is required.
 
 ## Formulas
@@ -59,7 +59,7 @@ The `ca=""` attribute refers to the location within the `calcChain.xml` file of 
 		<v>4.45</v>
 	</c>
 
-The result of the formula calculation is stored in the `<>v<\v>` value.
+The result of the formula calculation is stored in the `<v><\v>` value.
 
 ### Shared
 
@@ -79,7 +79,7 @@ shared index `si=""`.
 		<f t="shared" si="1"/>
 		<v>10</v>
 	</c>
-	
+
 One issue with this is that Excel must recompute the references dynamically upon opening,
 and so any text representation of shared formulas must also be recomputed before
 accurate text based differences could be computed.
@@ -94,5 +94,5 @@ Array based formulas are stored directly in the value of the `<f><\f>` header.
 		<f t="array" ref="I9">H9</f>
 		<v>14</v>
 	</c>
-	
+
 The computed result of the formula is stored in the `<v><\v>` value.

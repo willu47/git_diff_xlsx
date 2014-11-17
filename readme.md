@@ -1,19 +1,33 @@
-# git_diff_xlsx
+# git_diff_xlsx  [![Build Status](https://travis-ci.org/willu47/git_diff_xlsx.svg?branch=develop)](https://travis-ci.org/willu47/git_diff_xlsx)
 
-[![Build Status](https://travis-ci.org/willu47/git_diff_xlsx.svg?branch=master)](https://travis-ci.org/willu47/git_diff_xlsx)
 
-1. Place the file `git_diff_xlsx` in a folder
-2. Add the following line to the global `.gitconfig` file:
+This script parses an .xlsx file and converts it into a text format which can be compared using git.
+
+I wrote this script as I wanted to use a version control package for managing an existing computational model,
+the input files of which are defined using Microsoft Excel workbooks.
+
+See my [blog entry](https://wiki.ucl.ac.uk/x/P7MpAg) for more details of how it works.
+
+## Installation
+
+1. Download the [latest release](https://github.com/willu47/git_diff_xlsx/releases/latest)
+1. Run `python setup.py install`
+2. Add the following lines to the global .gitconfig file:
 
 ```
-    [diff "zip"]
+    [diff "git_diff_xlsx"]
     binary = True
-    textconv = python c:/path/to/git_diff_xlsx.py
+    textconv = parse_xlsx
+    cachetextconv = true
 ```
 
-3. Add the following line to the repository's `.gitattributes` file:
-    `*.xlsx diff=zip`
-4. Now, typing `git diff` at the prompt will produce text versions
-of Excel `.xlsx` files
+3. Add the following line to your repository's `.gitattributes` file
+    `*.xlsx diff=git_diff_xlsx`
+4. Now, typing `git diff` at the prompt will produce differences between
+text versions of Excel `.xlsx` files
 
-See https://wiki.ucl.ac.uk/x/P7MpAg for more details.
+## Caveats
+
+There are a bunch of issues with this script.
+I wrote it to fulfil a need I had then and there and there are lots of hard-coded horrors.
+Please feel free to contribute to cleaning up the code, submit issues and pull-requests.
