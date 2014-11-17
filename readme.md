@@ -6,6 +6,8 @@ This script parses an .xlsx file and converts it into a text format which can be
 I wrote this script as I wanted to use a version control package for managing an existing computational model,
 the input files of which are defined using Microsoft Excel workbooks.
 
+See my [blog entry](https://wiki.ucl.ac.uk/x/P7MpAg) for more details of how it works.
+
 ## Installation
 
 1. Download the [latest release](https://github.com/willu47/git_diff_xlsx/releases)
