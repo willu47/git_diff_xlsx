@@ -18,6 +18,7 @@
 
 import xlrd as xl
 import sys
+import unicodedata
 
 def parse(infile,outfile):
     """
@@ -43,13 +44,17 @@ def parse(infile,outfile):
         # find non empty cells
         sheet = book.sheet_by_index(index)
         outfile.write("=================================\n")
-        outfile.write("Sheet: " + sheet.name + "[ " + str(sheet.nrows) + " , " + str(sheet.ncols) + " ]\n")
+        sheetname = unicodedata.normalize('NFKD', unicode(sheet.name)).encode('ascii', 'ignore')
+        outfile.write("Sheet: " + sheetname + "[ " + str(sheet.nrows) + " , " + str(sheet.ncols) + " ]\n")
         outfile.write("=================================\n")
         for row in range(0,sheet.nrows):
             for col in range(0,sheet.ncols):
                 content = get_cells(sheet, row, col)
                 if content <> "":
-                    outfile.write("    " + unicode(xl.cellname(row,col)) + ": " + unicode(content) + "\n")
+                    output = '    ' + xl.cellname(row,col) + ': '
+                    output += unicodedata.normalize('NFKD', unicode(content)).encode('ascii', 'ignore')
+                    output += '\n'
+                    outfile.write(output)
         print "\n"
 
 # output cell address and contents of cell
