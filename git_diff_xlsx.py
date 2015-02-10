@@ -36,7 +36,10 @@ def parse(infile,outfile):
     outfile.write("File last edited by " + book.user_name + "\n")
 
     def get_cells(sheet, rowx, colx):
-        return sheet.cell_value(rowx, colx)
+        value = unicode(sheet.cell_value(rowx, colx))
+        if (rowx,colx) in sheet.cell_note_map.keys():
+            value += ' <<' + unicodedata.normalize('NFKD', unicode(sheet.cell_note_map[rowx,colx].text)).encode('ascii', 'ignore') + '>>'
+        return value
 
     # loop over worksheets
 
