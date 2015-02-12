@@ -54,7 +54,7 @@ def parse(infile,outfile):
             for col in range(0,sheet.ncols):
                 content = get_cells(sheet, row, col)
                 if content <> "":
-                    output = '    ' + xl.cellname(row,col) + ': '
+                    output = '    ' + xl.cellname(row,col) + ':\n        '
                     output += unicodedata.normalize('NFKD', unicode(content)).encode('ascii', 'ignore')
                     output += '\n'
                     outfile.write(output)
